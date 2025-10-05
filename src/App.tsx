@@ -12,6 +12,7 @@ export function App() {
     return () => clearInterval(intervalo);
   }, []);
 
+  
   return (
   <div>
     <Form />

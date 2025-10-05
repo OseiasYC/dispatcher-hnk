@@ -86,7 +86,7 @@ const Form: React.FC = () => {
         <Divider sx={{ my: 3 }} />
 
         <Typography variant="subtitle1" mb={1} fontWeight={600}>
-          {tipo === "incluir" ? "Qual" : "Qual o pedido?"}
+          {tipo === "incluir" ? "Qual setor e PDV?" : "Qual o pedido?"}
         </Typography>
         <Box display="grid" gridTemplateColumns={{ xs: "1fr", sm: "2fr 3fr" }} gap={2} mb={2}>
           <TextField

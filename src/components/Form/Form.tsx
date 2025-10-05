@@ -11,9 +11,14 @@ import {
   Button,
   IconButton,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Slide
 } from "@mui/material";
-import { AddCircle, RemoveCircle } from "@mui/icons-material";
-import styles from './Form.module.scss';
+import { AddCircle, RemoveCircle, CheckCircle } from "@mui/icons-material";
+import styles from "./Form.module.scss";
 
 interface Produto {
   codigo: string;
@@ -27,14 +32,21 @@ const Form: React.FC = () => {
   const [cliente, setCliente] = useState("");
   const [pdv, setPdv] = useState("");
   const [observacao, setObservacao] = useState("");
-  const [produtos, setProdutos] = useState<Produto[]>([{ codigo: "", pacotes: "", descricao: "" }]);
+  const [produtos, setProdutos] = useState<Produto[]>([
+    { codigo: "", pacotes: "", descricao: "" },
+  ]);
   const [submitted, setSubmitted] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
 
   useEffect(() => {
     setPedido("");
     setCliente("");
     setPdv("");
-    setProdutos(tipo === "incluir" || tipo === "alterar" ? [{ codigo: "", pacotes: "", descricao: "" }] : []);
+    setProdutos(
+      tipo === "incluir" || tipo === "alterar"
+        ? [{ codigo: "", pacotes: "", descricao: "" }]
+        : []
+    );
   }, [tipo]);
 
   const handleProdutoChange = (index: number, field: keyof Produto, value: string) => {
@@ -53,24 +65,54 @@ const Form: React.FC = () => {
 
   const isCodigoValido = (codigo: string) => codigo.startsWith("90") && codigo.length === 6;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
+
     const codigosInvalidos = produtos.some((p) => !isCodigoValido(p.codigo));
     if (codigosInvalidos) return;
+
     const data = { tipo, pedido, cliente, pdv, produtos, observacao };
     console.log("Dados enviados:", data);
+
+    // Copiar para área de transferência
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+      console.log("Copiado para área de transferência!");
+    } catch (err) {
+      console.error("Erro ao copiar:", err);
+    }
+
+    setOpenDialog(true);
+  };
+
+  const resetForm = () => {
+    setTipo("alterar");
+    setPedido("");
+    setCliente("");
+    setPdv("");
+    setObservacao("");
+    setProdutos([{ codigo: "", pacotes: "", descricao: "" }]);
+    setSubmitted(false);
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 3, maxWidth: 800, mx: "auto", mt: 4, borderRadius: 3 }}>
+    <Paper
+      elevation={3}
+      sx={{ p: 3, maxWidth: 800, mx: "auto", mt: 4, borderRadius: 3 }}
+    >
       <Typography variant="h4" className={styles.titulo} mt={4}>
         <img src="/hnk-logo.png" alt="logo HNK" className={styles.logo} />
         Despachos
       </Typography>
 
       <Box component="form" onSubmit={handleSubmit} mt={3}>
-        <FormControl component="fieldset" fullWidth margin="normal" sx={{ textAlign: "center" }}>
+        <FormControl
+          component="fieldset"
+          fullWidth
+          margin="normal"
+          sx={{ textAlign: "center" }}
+        >
           <RadioGroup
             row
             value={tipo}
@@ -88,7 +130,12 @@ const Form: React.FC = () => {
         <Typography variant="subtitle1" mb={1} fontWeight={600}>
           {tipo === "incluir" ? "Qual setor e PDV?" : "Qual o pedido?"}
         </Typography>
-        <Box display="grid" gridTemplateColumns={{ xs: "1fr", sm: "2fr 3fr" }} gap={2} mb={2}>
+        <Box
+          display="grid"
+          gridTemplateColumns={{ xs: "1fr", sm: "2fr 3fr" }}
+          gap={2}
+          mb={2}
+        >
           <TextField
             label={tipo === "incluir" ? "Setor" : "Nº Pedido"}
             required={tipo !== "cancelar"}
@@ -102,7 +149,7 @@ const Form: React.FC = () => {
             inputProps={{
               inputMode: "numeric",
               pattern: "[0-9]*",
-              maxLength: tipo === "incluir" ? 3 : tipo === "alterar" ? 4 : undefined
+              maxLength: tipo === "incluir" ? 3 : tipo === "alterar" ? 4 : undefined,
             }}
             fullWidth
           />
@@ -122,7 +169,7 @@ const Form: React.FC = () => {
             }}
             inputProps={{
               inputMode: tipo === "incluir" ? "numeric" : undefined,
-              pattern: tipo === "incluir" ? "[0-9]*" : undefined
+              pattern: tipo === "incluir" ? "[0-9]*" : undefined,
             }}
             fullWidth
           />
@@ -142,7 +189,12 @@ const Form: React.FC = () => {
                   mb={2}
                   sx={{ border: "1px solid #ddd", p: 2, borderRadius: 1 }}
                 >
-                  <Box display="grid" gridTemplateColumns={{ xs: "1fr", sm: "2fr 1fr" }} gap={2} mb={2}>
+                  <Box
+                    display="grid"
+                    gridTemplateColumns={{ xs: "2fr 1fr" }}
+                    gap={2}
+                    mb={2}
+                  >
                     <TextField
                       label="Cód. Produto"
                       required
@@ -154,7 +206,7 @@ const Form: React.FC = () => {
                       inputProps={{
                         inputMode: "numeric",
                         pattern: "[0-9]*",
-                        maxLength: 6
+                        maxLength: 6,
                       }}
                       fullWidth
                       error={submitted && !codigoValido}
@@ -166,7 +218,7 @@ const Form: React.FC = () => {
                     />
 
                     <TextField
-                      label="Quantidade"
+                      label="Pacotes"
                       required
                       value={produto.pacotes}
                       onChange={(e) =>
@@ -174,7 +226,7 @@ const Form: React.FC = () => {
                       }
                       inputProps={{
                         inputMode: "numeric",
-                        pattern: "[0-9]*"
+                        pattern: "[0-9]*",
                       }}
                       fullWidth
                     />
@@ -192,7 +244,11 @@ const Form: React.FC = () => {
 
                   {produtos.length > 1 && (
                     <Box textAlign="right" mt={1}>
-                      <IconButton color="error" onClick={() => removerProduto(index)} size="large">
+                      <IconButton
+                        color="error"
+                        onClick={() => removerProduto(index)}
+                        size="large"
+                      >
                         <RemoveCircle />
                       </IconButton>
                     </Box>
@@ -233,6 +289,65 @@ const Form: React.FC = () => {
           </Button>
         </Box>
       </Box>
+
+      {/* Dialog estilizado */}
+      <Dialog
+        open={openDialog}
+        onClose={() => {
+          window.location.reload();
+        }}
+        TransitionComponent={(props) => <Slide direction="up" {...props} />}
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            p: 2,
+            textAlign: "center",
+          },
+        }}
+      disableScrollLock>
+        <DialogTitle>
+          <CheckCircle color="success" sx={{ fontSize: 60 }} />
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="h6" gutterBottom fontWeight={600}>
+            Despacho Copiado!
+          </Typography>
+          <Typography color="text.secondary">
+            Deseja compartilhar este despacho via WhatsApp?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
+          <Button
+            color="primary"
+            variant="outlined"
+            onClick={() => {
+              window.location.reload();
+            }}
+          >
+            NÃO
+          </Button>
+          <Button
+            color="success"
+            variant="contained"
+            
+            onClick={() => {
+              const message = `Pedido enviado:\nTipo: ${tipo}\nPedido: ${pedido}\nCliente: ${cliente}\nPDV: ${pdv}\nProdutos: ${produtos
+                .map(
+                  (p) => `${p.codigo} - ${p.pacotes}x ${p.descricao}`
+                )
+                .join("\n")}\nObservação: ${observacao}`;
+              const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
+                message
+              )}`;
+              window.open(whatsappUrl, "_blank");
+              setOpenDialog(false);
+              resetForm();
+            }}
+          >
+            SIM
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 };

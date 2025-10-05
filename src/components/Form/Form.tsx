@@ -147,23 +147,11 @@ const Form: React.FC = () => {
 
     try {
       await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
-      console.log("Copiado para área de transferência!");
     } catch (err) {
       console.error("Erro ao copiar:", err);
     }
 
     setOpenDialog(true);
-  };
-
-  const resetForm = () => {
-    setTipo("alterar");
-    setPedido("");
-    setCliente("");
-    setPdv("");
-    setObservacao("");
-    setProdutos([{ codigo: "", pacotes: "", descricao: "", valor: "" }]);
-    setSubmitted(false);
-    setId(gerarId());
   };
 
   return (
@@ -292,7 +280,7 @@ const Form: React.FC = () => {
 
                   <Box
                     display="grid"
-                    gridTemplateColumns={{ xs: "2fr 1fr 2fr" }}
+                    gridTemplateColumns={{ xs: "3fr 1.25fr 1.25fr" }}
                     gap={2}
                     mb={2}
                   >
@@ -386,7 +374,7 @@ const Form: React.FC = () => {
           Alguma observação?
         </Typography>
         <TextField
-          label="Ex. mudar pagamento, remover pedido etc."
+          label="Ex. mudar pagamento, remover pedido"
           fullWidth
           multiline
           rows={3}
@@ -444,8 +432,7 @@ const Form: React.FC = () => {
                 message
               )}`;
               window.open(whatsappUrl, "_blank");
-              setOpenDialog(false);
-              resetForm();
+              window.location.reload();
             }}
           >
             SIM

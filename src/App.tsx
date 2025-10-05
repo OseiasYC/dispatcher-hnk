@@ -13,10 +13,12 @@ export function App() {
   }, []);
 
   return (
-    <div>
-      {horaAtual >= 17 ? <Closed /> : <Form />}
-    </div>
-  );
+  <div>
+    <Form />
+    {/* {horaAtual >= 17 ? <Closed /> : <Form />} */}
+  </div>
+);
+
 }
 
 export default App;

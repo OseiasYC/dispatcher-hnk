@@ -15,7 +15,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Slide
+  Slide,
 } from "@mui/material";
 import { AddCircle, RemoveCircle, CheckCircle } from "@mui/icons-material";
 import styles from "./Form.module.scss";
@@ -24,7 +24,67 @@ interface Produto {
   codigo: string;
   pacotes: string;
   descricao: string;
+  valor: string;
 }
+
+const gerarId = (): string => {
+  const array = new Uint8Array(5);
+  crypto.getRandomValues(array);
+  return Array.from(array)
+    .map((b) => ("abcdefghijklmnopqrstuvwxyz0123456789")[b % 36])
+    .join("");
+};
+
+// Função para formatar valor em reais: 1234 -> "12,34"
+const formatarValor = (valor: string): string => {
+  const somenteNumeros = valor.replace(/\D/g, "");
+  if (!somenteNumeros) return "";
+  const numero = (parseInt(somenteNumeros, 10) / 100).toFixed(2);
+  return numero.replace(".", ",");
+};
+
+const formatarMensagem = (data: {
+  tipo: string;
+  pedido: string;
+  cliente: string;
+  pdv: string;
+  produtos: Produto[];
+  observacao: string;
+  id: string;
+}) => {
+  const simbolosTipo: Record<string, string> = {
+    alterar: "🔀 ALTERAR",
+    incluir: "⏫ INCLUIR",
+    cancelar: "❌ CANCELAR",
+  };
+
+  const titulo = `${simbolosTipo[data.tipo]} - ${data.id}`;
+
+  const clienteLinha =
+    data.tipo === "incluir"
+      ? `${data.pedido} - PDV ${data.pdv}`
+      : data.cliente
+        ? `${data.pedido} - ${data.cliente}`
+        : data.pedido;
+
+  const produtosTexto =
+    data.produtos && data.produtos.length > 0
+      ? data.produtos
+        .filter((p) => p.codigo || p.pacotes || p.descricao || p.valor)
+        .map(
+          (p) =>
+            `* ${p.codigo} - ${p.pacotes} PC - ${p.descricao}${p.valor ? ` - R$ ${p.valor}` : ""
+            }`
+        )
+        .join("\n")
+      : "";
+
+  const observacaoTexto = data.observacao
+    ? `\n\nObs.\n${data.observacao}`
+    : "";
+
+  return `${titulo}\n\n${clienteLinha}\n\n${produtosTexto}${observacaoTexto}`;
+};
 
 const Form: React.FC = () => {
   const [tipo, setTipo] = useState("alterar");
@@ -33,37 +93,47 @@ const Form: React.FC = () => {
   const [pdv, setPdv] = useState("");
   const [observacao, setObservacao] = useState("");
   const [produtos, setProdutos] = useState<Produto[]>([
-    { codigo: "", pacotes: "", descricao: "" },
+    { codigo: "", pacotes: "", descricao: "", valor: "" },
   ]);
   const [submitted, setSubmitted] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
+  const [id, setId] = useState<string>("");
 
   useEffect(() => {
+    setId(gerarId());
     setPedido("");
     setCliente("");
     setPdv("");
     setProdutos(
       tipo === "incluir" || tipo === "alterar"
-        ? [{ codigo: "", pacotes: "", descricao: "" }]
+        ? [{ codigo: "", pacotes: "", descricao: "", valor: "" }]
         : []
     );
   }, [tipo]);
 
-  const handleProdutoChange = (index: number, field: keyof Produto, value: string) => {
+  const handleProdutoChange = (
+    index: number,
+    field: keyof Produto,
+    value: string
+  ) => {
     const novosProdutos = [...produtos];
     novosProdutos[index] = { ...novosProdutos[index], [field]: value };
     setProdutos(novosProdutos);
   };
 
   const incluirProduto = () => {
-    setProdutos([...produtos, { codigo: "", pacotes: "", descricao: "" }]);
+    setProdutos([
+      ...produtos,
+      { codigo: "", pacotes: "", descricao: "", valor: "" },
+    ]);
   };
 
   const removerProduto = (index: number) => {
     setProdutos(produtos.filter((_, i) => i !== index));
   };
 
-  const isCodigoValido = (codigo: string) => codigo.startsWith("90") && codigo.length === 6;
+  const isCodigoValido = (codigo: string) =>
+    codigo.startsWith("90") && codigo.length === 6;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,10 +142,9 @@ const Form: React.FC = () => {
     const codigosInvalidos = produtos.some((p) => !isCodigoValido(p.codigo));
     if (codigosInvalidos) return;
 
-    const data = { tipo, pedido, cliente, pdv, produtos, observacao };
+    const data = { tipo, pedido, cliente, pdv, produtos, observacao, id };
     console.log("Dados enviados:", data);
 
-    // Copiar para área de transferência
     try {
       await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
       console.log("Copiado para área de transferência!");
@@ -92,8 +161,9 @@ const Form: React.FC = () => {
     setCliente("");
     setPdv("");
     setObservacao("");
-    setProdutos([{ codigo: "", pacotes: "", descricao: "" }]);
+    setProdutos([{ codigo: "", pacotes: "", descricao: "", valor: "" }]);
     setSubmitted(false);
+    setId(gerarId());
   };
 
   return (
@@ -107,6 +177,7 @@ const Form: React.FC = () => {
       </Typography>
 
       <Box component="form" onSubmit={handleSubmit} mt={3}>
+        {/* Tipo */}
         <FormControl
           component="fieldset"
           fullWidth
@@ -119,14 +190,27 @@ const Form: React.FC = () => {
             onChange={(e) => setTipo(e.target.value)}
             sx={{ justifyContent: "space-around" }}
           >
-            <FormControlLabel value="alterar" control={<Radio />} label="🔀 Alterar" />
-            <FormControlLabel value="incluir" control={<Radio />} label="⏫ Incluir" />
-            <FormControlLabel value="cancelar" control={<Radio />} label="❌ Cancelar" />
+            <FormControlLabel
+              value="alterar"
+              control={<Radio />}
+              label="🔀 Alterar"
+            />
+            <FormControlLabel
+              value="incluir"
+              control={<Radio />}
+              label="⏫ Incluir"
+            />
+            <FormControlLabel
+              value="cancelar"
+              control={<Radio />}
+              label="❌ Cancelar"
+            />
           </RadioGroup>
         </FormControl>
 
         <Divider sx={{ my: 3 }} />
 
+        {/* Pedido / Cliente */}
         <Typography variant="subtitle1" mb={1} fontWeight={600}>
           {tipo === "incluir" ? "Qual setor e PDV?" : "Qual o pedido?"}
         </Typography>
@@ -161,7 +245,8 @@ const Form: React.FC = () => {
             onChange={(e) => {
               if (tipo === "incluir") {
                 let valor = e.target.value.replace(/\D/g, "").slice(0, 8);
-                if (valor.length > 4) valor = valor.slice(0, 4) + "-" + valor.slice(4);
+                if (valor.length > 4)
+                  valor = valor.slice(0, 4) + "-" + valor.slice(4);
                 setPdv(valor);
               } else {
                 setCliente(e.target.value.toUpperCase());
@@ -175,6 +260,7 @@ const Form: React.FC = () => {
           />
         </Box>
 
+        {/* Produtos */}
         {(tipo === "incluir" || tipo === "alterar") && produtos.length > 0 && (
           <Box>
             <Typography variant="subtitle1" mb={1} fontWeight={600}>
@@ -189,9 +275,24 @@ const Form: React.FC = () => {
                   mb={2}
                   sx={{ border: "1px solid #ddd", p: 2, borderRadius: 1 }}
                 >
+                  <TextField
+                    label="Descrição"
+                    required
+                    value={produto.descricao}
+                    onChange={(e) =>
+                      handleProdutoChange(
+                        index,
+                        "descricao",
+                        e.target.value.toUpperCase()
+                      )
+                    }
+                    fullWidth
+                    sx={{ mb: 2 }}
+                  />
+
                   <Box
                     display="grid"
-                    gridTemplateColumns={{ xs: "2fr 1fr" }}
+                    gridTemplateColumns={{ xs: "2fr 1fr 2fr" }}
                     gap={2}
                     mb={2}
                   >
@@ -218,11 +319,15 @@ const Form: React.FC = () => {
                     />
 
                     <TextField
-                      label="Pacotes"
+                      label="Pcts"
                       required
                       value={produto.pacotes}
                       onChange={(e) =>
-                        handleProdutoChange(index, "pacotes", e.target.value.replace(/\D/g, ""))
+                        handleProdutoChange(
+                          index,
+                          "pacotes",
+                          e.target.value.replace(/\D/g, "")
+                        )
                       }
                       inputProps={{
                         inputMode: "numeric",
@@ -230,17 +335,24 @@ const Form: React.FC = () => {
                       }}
                       fullWidth
                     />
-                  </Box>
 
-                  <TextField
-                    label="Descrição"
-                    required
-                    value={produto.descricao}
-                    onChange={(e) =>
-                      handleProdutoChange(index, "descricao", e.target.value.toUpperCase())
-                    }
-                    fullWidth
-                  />
+                    <TextField
+                      label="R$"
+                      value={produto.valor}
+                      onChange={(e) =>
+                        handleProdutoChange(
+                          index,
+                          "valor",
+                          formatarValor(e.target.value)
+                        )
+                      }
+                      inputProps={{
+                        inputMode: "numeric",
+                        pattern: "[0-9,]*",
+                      }}
+                      fullWidth
+                    />
+                  </Box>
 
                   {produtos.length > 1 && (
                     <Box textAlign="right" mt={1}>
@@ -290,12 +402,9 @@ const Form: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Dialog estilizado */}
       <Dialog
         open={openDialog}
-        onClose={() => {
-          window.location.reload();
-        }}
+        onClose={() => window.location.reload()}
         TransitionComponent={(props) => <Slide direction="up" {...props} />}
         PaperProps={{
           sx: {
@@ -304,7 +413,8 @@ const Form: React.FC = () => {
             textAlign: "center",
           },
         }}
-      disableScrollLock>
+        disableScrollLock
+      >
         <DialogTitle>
           <CheckCircle color="success" sx={{ fontSize: 60 }} />
         </DialogTitle>
@@ -320,22 +430,16 @@ const Form: React.FC = () => {
           <Button
             color="primary"
             variant="outlined"
-            onClick={() => {
-              window.location.reload();
-            }}
+            onClick={() => window.location.reload()}
           >
             NÃO
           </Button>
           <Button
             color="success"
             variant="contained"
-            
             onClick={() => {
-              const message = `Pedido enviado:\nTipo: ${tipo}\nPedido: ${pedido}\nCliente: ${cliente}\nPDV: ${pdv}\nProdutos: ${produtos
-                .map(
-                  (p) => `${p.codigo} - ${p.pacotes}x ${p.descricao}`
-                )
-                .join("\n")}\nObservação: ${observacao}`;
+              const data = { tipo, pedido, cliente, pdv, produtos, observacao, id };
+              const message = formatarMensagem(data);
               const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(
                 message
               )}`;

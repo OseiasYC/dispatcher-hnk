@@ -1,0 +1,16 @@
+.titulo {
+    margin-bottom: .5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .estrela {
+        width: 2rem;
+        margin-right: .5rem;
+    }
+
+    .logo {
+        width: 9rem;
+        margin-left: .75rem;
+    }
+}

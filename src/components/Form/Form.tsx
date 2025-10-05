@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   TextField,
@@ -15,61 +15,61 @@ import {
 import { AddCircle, RemoveCircle } from "@mui/icons-material";
 import styles from './Form.module.scss';
 
+interface Produto {
+  codigo: string;
+  pacotes: string;
+  descricao: string;
+}
+
 const Form: React.FC = () => {
-  const [tipo, setTipo] = useState("adicionar");
+  const [tipo, setTipo] = useState("alterar");
   const [pedido, setPedido] = useState("");
   const [cliente, setCliente] = useState("");
+  const [pdv, setPdv] = useState("");
   const [observacao, setObservacao] = useState("");
-  const [produtos, setProdutos] = useState([{ codigo: "", pacotes: "", descricao: "" }]);
+  const [produtos, setProdutos] = useState<Produto[]>([{ codigo: "", pacotes: "", descricao: "" }]);
+  const [submitted, setSubmitted] = useState(false);
 
-  const handleProdutoChange = (index: number, field: string, value: string) => {
+  // Limpar campos ao mudar tipo
+  useEffect(() => {
+    setPedido("");
+    setCliente("");
+    setPdv("");
+    setProdutos(tipo === "incluir" || tipo === "alterar" ? [{ codigo: "", pacotes: "", descricao: "" }] : []);
+  }, [tipo]);
+
+  const handleProdutoChange = (index: number, field: keyof Produto, value: string) => {
     const novosProdutos = [...produtos];
     novosProdutos[index] = { ...novosProdutos[index], [field]: value };
     setProdutos(novosProdutos);
   };
 
-  const adicionarProduto = () => {
+  const incluirProduto = () => {
     setProdutos([...produtos, { codigo: "", pacotes: "", descricao: "" }]);
   };
 
   const removerProduto = (index: number) => {
-    const novos = produtos.filter((_, i) => i !== index);
-    setProdutos(novos);
+    setProdutos(produtos.filter((_, i) => i !== index));
   };
+
+  const isCodigoValido = (codigo: string) => codigo.startsWith("90") && codigo.length === 6;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const data = { tipo, pedido, cliente, produtos, observacao };
+    setSubmitted(true);
+
+    const codigosInvalidos = produtos.some((p) => !isCodigoValido(p.codigo));
+    if (codigosInvalidos) return;
+
+    const data = { tipo, pedido, cliente, pdv, produtos, observacao };
     console.log("Dados enviados:", data);
-    alert("Dados enviados! Veja o console.");
   };
 
   return (
-    <Paper
-      elevation={3}
-      sx={{ p: 3, maxWidth: 800, mx: "auto", mt: 4, borderRadius: 3 }}
-    >
-      <Typography
-        variant="h4"
-        className={styles.titulo}
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 2,
-        }}
-      >
-        <img
-          src="public/red-star.svg"
-          alt="estrela Heineken"
-          className={styles.estrela}
-        />
-        <h3>Despacho</h3>
-        <img
-          src="public/hnk-logo.png"
-          alt="logo HNK"
-          className={styles.logo}
-        />
+    <Paper elevation={3} sx={{ p: 3, maxWidth: 800, mx: "auto", mt: 4, borderRadius: 3 }}>
+      <Typography variant="h4" className={styles.titulo} mt={4}>
+        <img src="/hnk-logo.png" alt="logo HNK" className={styles.logo} />
+        Despachos
       </Typography>
 
       <Box component="form" onSubmit={handleSubmit} mt={3}>
@@ -79,128 +79,144 @@ const Form: React.FC = () => {
             row
             value={tipo}
             onChange={(e) => setTipo(e.target.value)}
-            sx={{ justifyContent: "center" }}
+            sx={{ justifyContent: "space-around" }}
           >
             <FormControlLabel value="alterar" control={<Radio />} label="🔀 Alterar" />
-            <FormControlLabel value="adicionar" control={<Radio />} label="⏫ Adicionar" />
-            <FormControlLabel value="excluir" control={<Radio />} label="❌ Excluir" />
+            <FormControlLabel value="incluir" control={<Radio />} label="⏫ Incluir" />
+            <FormControlLabel value="cancelar" control={<Radio />} label="❌ Cancelar" />
           </RadioGroup>
         </FormControl>
 
         <Divider sx={{ my: 3 }} />
 
-        {/* Nº Pedido e Cliente */}
+        {/* Nº Pedido / Setor e Cliente / PDV */}
         <Typography variant="subtitle1" mb={1} fontWeight={600}>
-          Qual o pedido?
+          {tipo === "incluir" ? "Qual setor e PDV?" : "Qual o pedido?"}
         </Typography>
         <Box display="grid" gridTemplateColumns={{ xs: "1fr", sm: "2fr 3fr" }} gap={2} mb={2}>
           <TextField
-            label="Nº Pedido"
-            required
+            label={tipo === "incluir" ? "Setor" : "Nº Pedido"}
+            required={tipo !== "cancelar"}
             value={pedido}
-            onChange={(e) => setPedido(e.target.value.replace(/\D/g, ""))}
-            inputProps={{ inputMode: "numeric" }}
+            onChange={(e) => {
+              let valor = e.target.value.replace(/\D/g, "");
+              if (tipo === "incluir") valor = valor.slice(0, 3);
+              setPedido(valor);
+            }}
+            inputProps={{ inputMode: "numeric", maxLength: tipo === "incluir" ? 3 : undefined }}
             fullWidth
           />
           <TextField
-            label="Cliente"
-            required
-            value={cliente}
-            onChange={(e) => setCliente(e.target.value)}
+            label={tipo === "incluir" ? "PDV" : "Cliente"}
+            required={tipo !== "cancelar"}
+            value={tipo === "incluir" ? pdv : cliente}
+            onChange={(e) => {
+              if (tipo === "incluir") {
+                let valor = e.target.value.replace(/\D/g, "").slice(0, 8);
+                if (valor.length > 4) valor = valor.slice(0, 4) + "-" + valor.slice(4);
+                setPdv(valor);
+              } else {
+                setCliente(e.target.value.toUpperCase());
+              }
+            }}
             fullWidth
           />
         </Box>
 
-        <Divider sx={{ my: 3 }} />
-
         {/* Produtos */}
-        <Box>
-          <Typography variant="subtitle1" mb={1} fontWeight={600}>
-            Quais produtos?
-          </Typography>
+        {(tipo === "incluir" || tipo === "alterar") && produtos.length > 0 && (
+          <Box>
+            <Typography variant="subtitle1" mb={1} fontWeight={600}>
+              Quais produtos?
+            </Typography>
 
-          {produtos.map((produto, index) => (
-            <Box
-              key={index}
-              mb={2}
-              sx={{
-                border: "1px solid #ddd",
-                p: 2,
-                borderRadius: 1,
-              }}
-            >
-              {/* Grid para Código e Quantidade */}
-              <Box display="grid" gridTemplateColumns={{ xs: "1fr", sm: "2fr 1fr" }} gap={2} mb={2}>
-                <TextField
-                  label="Cód. Produto"
-                  value={produto.codigo}
-                  onChange={(e) =>
-                    handleProdutoChange(index, "codigo", e.target.value.replace(/\D/g, ""))
-                  }
-                  inputProps={{ maxLength: 6 }}
-                  fullWidth
-                />
+            {produtos.map((produto, index) => {
+              const codigoValido = isCodigoValido(produto.codigo);
+              return (
+                <Box
+                  key={index}
+                  mb={2}
+                  sx={{ border: "1px solid #ddd", p: 2, borderRadius: 1 }}
+                >
+                  <Box display="grid" gridTemplateColumns={{ xs: "1fr", sm: "2fr 1fr" }} gap={2} mb={2}>
+                    <TextField
+                      label="Cód. Produto"
+                      required
+                      value={produto.codigo}
+                      onChange={(e) => {
+                        const valor = e.target.value.replace(/\D/g, "").slice(0, 6);
+                        handleProdutoChange(index, "codigo", valor);
+                      }}
+                      inputProps={{ maxLength: 6 }}
+                      fullWidth
+                      error={submitted && !codigoValido}
+                      helperText={
+                        submitted && !codigoValido
+                          ? "Código inválido: deve ter 6 dígitos e começar com 90"
+                          : ""
+                      }
+                    />
 
-                <TextField
-                  label="Quantidade"
-                  value={produto.pacotes}
-                  onChange={(e) =>
-                    handleProdutoChange(index, "pacotes", e.target.value.replace(/\D/g, ""))
-                  }
-                  fullWidth
-                />
-              </Box>
+                    <TextField
+                      label="Quantidade"
+                      required
+                      value={produto.pacotes}
+                      onChange={(e) =>
+                        handleProdutoChange(index, "pacotes", e.target.value.replace(/\D/g, ""))
+                      }
+                      fullWidth
+                    />
+                  </Box>
 
-              {/* Descrição */}
-              <TextField
-                label="Descrição"
-                value={produto.descricao}
-                onChange={(e) => handleProdutoChange(index, "descricao", e.target.value)}
-                fullWidth
-                margin="normal"
-              />
+                  <TextField
+                    label="Descrição"
+                    required
+                    value={produto.descricao}
+                    onChange={(e) =>
+                      handleProdutoChange(index, "descricao", e.target.value.toUpperCase())
+                    }
+                    fullWidth
+                  />
 
-              {/* Botão de remover */}
-              {produtos.length > 1 && (
-                <Box textAlign="right" mt={1}>
-                  <IconButton color="error" onClick={() => removerProduto(index)} size="large">
-                    <RemoveCircle />
-                  </IconButton>
+                  {produtos.length > 1 && (
+                    <Box textAlign="right" mt={1}>
+                      <IconButton color="error" onClick={() => removerProduto(index)} size="large">
+                        <RemoveCircle />
+                      </IconButton>
+                    </Box>
+                  )}
                 </Box>
-              )}
-            </Box>
-          ))}
+              );
+            })}
 
-          <Button
-            variant="outlined"
-            color="primary"
-            startIcon={<AddCircle />}
-            onClick={adicionarProduto}
-            sx={{ mt: 1 }}
-          >
-            Incluir outro produto
-          </Button>
-        </Box>
-
-        <Divider sx={{ my: 3 }} />
+            <Button
+              variant="outlined"
+              color="primary"
+              startIcon={<AddCircle />}
+              onClick={incluirProduto}
+              sx={{ mt: 1 }}
+            >
+              Incluir outro produto
+            </Button>
+          </Box>
+        )}
 
         {/* Observação */}
+        <Divider sx={{ my: 3 }} />
         <Typography variant="subtitle1" mb={1} fontWeight={600}>
           Alguma observação?
         </Typography>
         <TextField
-          label="Ex. mudar para cartão de crédito"
+          label="Ex. mudar pagamento, remover pedido etc."
           fullWidth
           multiline
           rows={3}
-          margin="normal"
           value={observacao}
           onChange={(e) => setObservacao(e.target.value)}
         />
 
-        <Divider sx={{ my: 3 }} />
-
         {/* Botão de envio */}
+        <Divider sx={{ my: 3 }} />
         <Box textAlign="center" mt={2}>
           <Button type="submit" variant="contained" color="success">
             Enviar

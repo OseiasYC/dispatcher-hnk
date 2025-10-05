@@ -30,7 +30,6 @@ const Form: React.FC = () => {
   const [produtos, setProdutos] = useState<Produto[]>([{ codigo: "", pacotes: "", descricao: "" }]);
   const [submitted, setSubmitted] = useState(false);
 
-  // Limpar campos ao mudar tipo
   useEffect(() => {
     setPedido("");
     setCliente("");
@@ -57,10 +56,8 @@ const Form: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
-
     const codigosInvalidos = produtos.some((p) => !isCodigoValido(p.codigo));
     if (codigosInvalidos) return;
-
     const data = { tipo, pedido, cliente, pdv, produtos, observacao };
     console.log("Dados enviados:", data);
   };
@@ -73,7 +70,6 @@ const Form: React.FC = () => {
       </Typography>
 
       <Box component="form" onSubmit={handleSubmit} mt={3}>
-        {/* Radio buttons */}
         <FormControl component="fieldset" fullWidth margin="normal" sx={{ textAlign: "center" }}>
           <RadioGroup
             row
@@ -89,9 +85,8 @@ const Form: React.FC = () => {
 
         <Divider sx={{ my: 3 }} />
 
-        {/* Nº Pedido / Setor e Cliente / PDV */}
         <Typography variant="subtitle1" mb={1} fontWeight={600}>
-          {tipo === "incluir" ? "Qual setor e PDV?" : "Qual o pedido?"}
+          {tipo === "incluir" ? "Qual" : "Qual o pedido?"}
         </Typography>
         <Box display="grid" gridTemplateColumns={{ xs: "1fr", sm: "2fr 3fr" }} gap={2} mb={2}>
           <TextField
@@ -101,11 +96,17 @@ const Form: React.FC = () => {
             onChange={(e) => {
               let valor = e.target.value.replace(/\D/g, "");
               if (tipo === "incluir") valor = valor.slice(0, 3);
+              if (tipo === "alterar") valor = valor.slice(0, 4);
               setPedido(valor);
             }}
-            inputProps={{ inputMode: "numeric", maxLength: tipo === "incluir" ? 3 : undefined }}
+            inputProps={{
+              inputMode: "numeric",
+              pattern: "[0-9]*",
+              maxLength: tipo === "incluir" ? 3 : tipo === "alterar" ? 4 : undefined
+            }}
             fullWidth
           />
+
           <TextField
             label={tipo === "incluir" ? "PDV" : "Cliente"}
             required={tipo !== "cancelar"}
@@ -119,11 +120,14 @@ const Form: React.FC = () => {
                 setCliente(e.target.value.toUpperCase());
               }
             }}
+            inputProps={{
+              inputMode: tipo === "incluir" ? "numeric" : undefined,
+              pattern: tipo === "incluir" ? "[0-9]*" : undefined
+            }}
             fullWidth
           />
         </Box>
 
-        {/* Produtos */}
         {(tipo === "incluir" || tipo === "alterar") && produtos.length > 0 && (
           <Box>
             <Typography variant="subtitle1" mb={1} fontWeight={600}>
@@ -147,7 +151,11 @@ const Form: React.FC = () => {
                         const valor = e.target.value.replace(/\D/g, "").slice(0, 6);
                         handleProdutoChange(index, "codigo", valor);
                       }}
-                      inputProps={{ maxLength: 6 }}
+                      inputProps={{
+                        inputMode: "numeric",
+                        pattern: "[0-9]*",
+                        maxLength: 6
+                      }}
                       fullWidth
                       error={submitted && !codigoValido}
                       helperText={
@@ -164,6 +172,10 @@ const Form: React.FC = () => {
                       onChange={(e) =>
                         handleProdutoChange(index, "pacotes", e.target.value.replace(/\D/g, ""))
                       }
+                      inputProps={{
+                        inputMode: "numeric",
+                        pattern: "[0-9]*"
+                      }}
                       fullWidth
                     />
                   </Box>
@@ -201,7 +213,6 @@ const Form: React.FC = () => {
           </Box>
         )}
 
-        {/* Observação */}
         <Divider sx={{ my: 3 }} />
         <Typography variant="subtitle1" mb={1} fontWeight={600}>
           Alguma observação?
@@ -215,7 +226,6 @@ const Form: React.FC = () => {
           onChange={(e) => setObservacao(e.target.value)}
         />
 
-        {/* Botão de envio */}
         <Divider sx={{ my: 3 }} />
         <Box textAlign="center" mt={2}>
           <Button type="submit" variant="contained" color="success">

@@ -58,14 +58,14 @@ const formatarMensagem = (data: {
     cancelar: "❌ CANCELAR",
   };
 
-  const titulo = `${simbolosTipo[data.tipo]} - ${data.id}`;
+  const titulo = `*${simbolosTipo[data.tipo]}* - \`${data.id}\``;
 
   const clienteLinha =
     data.tipo === "incluir"
-      ? `${data.pedido} - PDV ${data.pdv}`
+      ? `*${data.pedido}* - ${data.pdv}`
       : data.cliente
-        ? `${data.pedido} - ${data.cliente}`
-        : data.pedido;
+        ? `*${data.pedido}* - ${data.cliente}`
+        : `*${data.pedido}*`;
 
   const produtosTexto =
     data.produtos && data.produtos.length > 0
@@ -73,14 +73,14 @@ const formatarMensagem = (data: {
         .filter((p) => p.codigo || p.pacotes || p.descricao || p.valor)
         .map(
           (p) =>
-            `* ${p.codigo} - ${p.pacotes} PC - ${p.descricao}${p.valor ? ` - R$ ${p.valor}` : ""
+            `* *${p.codigo}* - ${p.pacotes} PC - ${p.descricao}${p.valor ? ` - *_R$${p.valor}_*` : ""
             }`
         )
         .join("\n")
       : "";
 
   const observacaoTexto = data.observacao
-    ? `\n\nObs.\n${data.observacao}`
+    ? `\n\nObs.\n_${data.observacao}_`
     : "";
 
   return `${titulo}\n\n${clienteLinha}\n\n${produtosTexto}${observacaoTexto}`;
@@ -249,12 +249,12 @@ const Form: React.FC = () => {
                   valor = valor.slice(0, 4) + "-" + valor.slice(4);
                 setPdv(valor);
               } else {
-                setCliente(e.target.value.toUpperCase());
+                setCliente(e.target.value);
               }
             }}
             inputProps={{
               inputMode: tipo === "incluir" ? "numeric" : undefined,
-              pattern: tipo === "incluir" ? "[0-9]*" : undefined,
+              pattern: tipo === "incluir" ? "\\d{4}-?\\d{0,4}" : undefined,
             }}
             fullWidth
           />
@@ -319,7 +319,7 @@ const Form: React.FC = () => {
                     />
 
                     <TextField
-                      label="Pcts"
+                      label="PC"
                       required
                       value={produto.pacotes}
                       onChange={(e) =>

@@ -76,7 +76,7 @@ const formatarMensagem = (data: {
             `* *${p.codigo}* - ${p.pacotes} PC - ${p.descricao}${p.valor ? ` - *_R$${p.valor}_*` : ""
             }`
         )
-        .join("\n")
+        .join("\n\n")
       : "";
 
   const observacaoTexto = data.observacao
@@ -146,7 +146,7 @@ const Form: React.FC = () => {
     console.log("Dados enviados:", data);
 
     try {
-      await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+      await navigator.clipboard.writeText(formatarMensagem(data));
     } catch (err) {
       console.error("Erro ao copiar:", err);
     }
@@ -280,7 +280,7 @@ const Form: React.FC = () => {
 
                   <Box
                     display="grid"
-                    gridTemplateColumns={{ xs: "3fr 1.25fr 1.25fr" }}
+                    gridTemplateColumns={{ xs: "2fr 1.25fr 2fr" }}
                     gap={2}
                     mb={2}
                   >

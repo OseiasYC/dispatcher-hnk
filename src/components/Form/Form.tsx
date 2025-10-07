@@ -186,7 +186,7 @@ const Form: React.FC = () => {
             <FormControlLabel
               value="digitar"
               control={<Radio />}
-              label="🔠 DIGITAR"
+              label="🔠 Digitar"
             />
             <FormControlLabel
               value="cancelar"

@@ -54,14 +54,14 @@ const formatarMensagem = (data: {
 }) => {
   const simbolosTipo: Record<string, string> = {
     alterar: "🔀 ALTERAR",
-    incluir: "⏫ INCLUIR",
+    digitar: "🔠 DIGITAR",
     cancelar: "❌ CANCELAR",
   };
 
   const titulo = `*${simbolosTipo[data.tipo]}* - \`${data.id}\``;
 
   const clienteLinha =
-    data.tipo === "incluir"
+    data.tipo === "digitar"
       ? `*${data.pedido}* - ${data.pdv}`
       : data.cliente
         ? `*${data.pedido}* - ${data.cliente}`
@@ -105,7 +105,7 @@ const Form: React.FC = () => {
     setCliente("");
     setPdv("");
     setProdutos(
-      tipo === "incluir" || tipo === "alterar"
+      tipo === "digitar" || tipo === "alterar"
         ? [{ codigo: "", pacotes: "", descricao: "", valor: "" }]
         : []
     );
@@ -121,7 +121,7 @@ const Form: React.FC = () => {
     setProdutos(novosProdutos);
   };
 
-  const incluirProduto = () => {
+  const digitarProduto = () => {
     setProdutos([
       ...produtos,
       { codigo: "", pacotes: "", descricao: "", valor: "" },
@@ -184,9 +184,9 @@ const Form: React.FC = () => {
               label="🔀 Alterar"
             />
             <FormControlLabel
-              value="incluir"
+              value="digitar"
               control={<Radio />}
-              label="⏫ Incluir"
+              label="🔠 DIGITAR"
             />
             <FormControlLabel
               value="cancelar"
@@ -200,7 +200,7 @@ const Form: React.FC = () => {
 
         {/* Pedido / Cliente */}
         <Typography variant="subtitle1" mb={1} fontWeight={600}>
-          {tipo === "incluir" ? "Qual setor e PDV?" : "Qual o pedido?"}
+          {tipo === "digitar" ? "Qual setor e PDV?" : "Qual o pedido?"}
         </Typography>
         <Box
           display="grid"
@@ -209,29 +209,29 @@ const Form: React.FC = () => {
           mb={2}
         >
           <TextField
-            label={tipo === "incluir" ? "Setor" : "Nº Pedido"}
+            label={tipo === "digitar" ? "Setor" : "Nº Pedido"}
             required={tipo !== "cancelar"}
             value={pedido}
             onChange={(e) => {
               let valor = e.target.value.replace(/\D/g, "");
-              if (tipo === "incluir") valor = valor.slice(0, 3);
+              if (tipo === "digitar") valor = valor.slice(0, 3);
               if (tipo === "alterar") valor = valor.slice(0, 4);
               setPedido(valor);
             }}
             inputProps={{
               inputMode: "numeric",
               pattern: "[0-9]*",
-              maxLength: tipo === "incluir" ? 3 : tipo === "alterar" ? 4 : undefined,
+              maxLength: tipo === "digitar" ? 3 : tipo === "alterar" ? 4 : undefined,
             }}
             fullWidth
           />
 
           <TextField
-            label={tipo === "incluir" ? "PDV" : "Cliente"}
+            label={tipo === "digitar" ? "PDV" : "Cliente"}
             required={tipo !== "cancelar"}
-            value={tipo === "incluir" ? pdv : cliente}
+            value={tipo === "digitar" ? pdv : cliente}
             onChange={(e) => {
-              if (tipo === "incluir") {
+              if (tipo === "digitar") {
                 let valor = e.target.value.replace(/\D/g, "").slice(0, 8);
                 if (valor.length > 4)
                   valor = valor.slice(0, 4) + "-" + valor.slice(4);
@@ -241,15 +241,15 @@ const Form: React.FC = () => {
               }
             }}
             inputProps={{
-              inputMode: tipo === "incluir" ? "numeric" : undefined,
-              pattern: tipo === "incluir" ? "\\d{4}-?\\d{0,4}" : undefined,
+              inputMode: tipo === "digitar" ? "numeric" : undefined,
+              pattern: tipo === "digitar" ? "\\d{4}-?\\d{0,4}" : undefined,
             }}
             fullWidth
           />
         </Box>
 
         {/* Produtos */}
-        {(tipo === "incluir" || tipo === "alterar") && produtos.length > 0 && (
+        {(tipo === "digitar" || tipo === "alterar") && produtos.length > 0 && (
           <Box>
             <Typography variant="subtitle1" mb={1} fontWeight={600}>
               Quais produtos?
@@ -361,7 +361,7 @@ const Form: React.FC = () => {
               variant="outlined"
               color="primary"
               startIcon={<AddCircle />}
-              onClick={incluirProduto}
+              onClick={digitarProduto}
               sx={{ mt: 1 }}
             >
               Incluir outro produto

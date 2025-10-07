@@ -411,7 +411,7 @@ const Form: React.FC = () => {
             Despacho Copiado!
           </Typography>
           <Typography color="text.secondary">
-            Deseja compartilhar este despacho via WhatsApp?
+            Envie ou cole o despacho para seu supervisor. Deseja enviar agora para o Whatsapp dele?
           </Typography>
         </DialogContent>
         <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
@@ -420,7 +420,7 @@ const Form: React.FC = () => {
             variant="outlined"
             onClick={() => window.location.reload()}
           >
-            NÃO
+            DEPOIS
           </Button>
           <Button
             color="success"

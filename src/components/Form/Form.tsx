@@ -227,7 +227,7 @@ const Form: React.FC = () => {
           />
 
           <TextField
-            label={tipo === "digitar" ? "PDV" : "Cliente"}
+            label={tipo === "digitar" ? "PDV" : "Razão"}
             required={tipo !== "cancelar"}
             value={tipo === "digitar" ? pdv : cliente}
             onChange={(e) => {

@@ -53,9 +53,9 @@ const formatarMensagem = (data: {
   id: string;
 }) => {
   const simbolosTipo: Record<string, string> = {
-    alterar: "🎄 ALTERAR",
-    digitar: "🎁 DIGITAR",
-    cancelar: "🪨 CANCELAR",
+    alterar: "🍾🥂 ALTERAR",
+    digitar: "🎆 DIGITAR",
+    cancelar: "🍺 CANCELAR",
   };
 
   const titulo = `*${simbolosTipo[data.tipo]}* - \`${data.id}\``;

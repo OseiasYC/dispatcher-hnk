@@ -53,9 +53,9 @@ const formatarMensagem = (data: {
   id: string;
 }) => {
   const simbolosTipo: Record<string, string> = {
-    alterar: "🍾🥂 ALTERAR",
-    digitar: "🎆 DIGITAR",
-    cancelar: "🍺 CANCELAR",
+    alterar: "🔀 ALTERAR",
+    digitar: "🔠 DIGITAR",
+    cancelar: "❌ CANCELAR",
   };
 
   const titulo = `*${simbolosTipo[data.tipo]}* - \`${data.id}\``;
@@ -133,7 +133,7 @@ const Form: React.FC = () => {
   };
 
   const isCodigoValido = (codigo: string) =>
-    codigo.startsWith("90") && codigo.length === 6;
+    codigo.length === 6;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
